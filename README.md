@@ -23,3 +23,7 @@ A web video player built with React and TypeScript, for a Go streaming backend.
 ```bash
 npm install
 npm run dev
+
+```
+
+The dev server forwards API requests to the backend at `http://localhost:3000` (see `vite.config.ts`).

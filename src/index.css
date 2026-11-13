@@ -4,3 +4,21 @@ body {
   background: #111;
   color: #eee;
 }
+
+
+.row{
+  padding: 0 24px;
+}
+
+.row h2 {
+  font-size : 1.2rem ;
+  margin: 24px 0 8px;
+}
+.poster{
+  flex: none ;
+  width: 140px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px ;
+  background: #222;
+}

@@ -13,3 +13,34 @@ export async function login(account: Account): Promise<void> {
     throw new Error(data.error?.message ?? "Login failed");
   }
 }
+
+export type Movie = {
+  stream_id: number;
+  name: string;
+  stream_icon: string;
+  container_extension: string;
+  category_id: string;
+  rating: number;
+};
+
+export type Category = {
+  category_id: string;
+  category_name: string;
+};
+
+async function list<T>(account: Account, action: string): Promise<T[]> {
+  const params = new URLSearchParams({ ...account, action });
+  const res = await fetch(`/player_api.php?${params}`);
+  if (!res.ok) {
+    throw new Error(`Could not load ${action} (${res.status})`);
+  }
+  return res.json();
+}
+
+export function getMovies(account: Account): Promise<Movie[]> {
+  return list<Movie>(account, "get_vod_streams");
+}
+
+export function getCategories(account: Account): Promise<Category[]> {
+  return list<Category>(account, "get_vod_categories");
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Login from "./Login";
 import type { Account } from "./api";
+import Home from "./Home";
 
 function App() {
   const [account, setAccount] = useState<Account | null>(null);
@@ -10,9 +11,7 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>Welcome {account.username}</h1>
-    </main>
+   <Home account={account}/>
   );
 }
 

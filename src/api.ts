@@ -44,3 +44,36 @@ export function getMovies(account: Account): Promise<Movie[]> {
 export function getCategories(account: Account): Promise<Category[]> {
   return list<Category>(account, "get_vod_categories");
 }
+
+export type MovieInfo = {
+  info: {
+    plot?: string;
+    cast?: string;
+    director?: string;
+    genre?: string;
+    duration?: string;
+    year?: string;
+    rating?: number | string;
+
+    backdrop_path?: string[];
+    video?: { codec_name: string };
+  };
+};
+
+export async function getMovieInfo(
+  account: Account,
+  movie: Movie,
+): Promise<MovieInfo> {
+  const params = new URLSearchParams({
+    ...account,
+    action: "get_vod_info",
+    vod_id: String(movie.stream_id),
+  });
+
+  const res = await fetch(`/player_api.php?${params}`);
+
+  if (!res.ok) {
+    throw new Error(`Could not load the movie (${res.status})`);
+  }
+  return res.json();
+}

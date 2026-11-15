@@ -1,49 +1,83 @@
-import { useEffect, useState } from "react";
-import { getCategories , getMovies, type Account , type Category , type Movie } from "./api";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getCategories,
+  getMovies,
+  type Account,
+  type Category,
+  type Movie,
+} from "./api";
 import Row from "./Row";
+import Details from "./Details";
 
-type Props = { account: Account }
+type Props = { account: Account };
 
-function Home ({account}: Props){
-    const [movies , setMovies] = useState<Movie[]>([]);
-    const [Categories , setCategories] = useState<Category[]>([]);
-    const [error, setError] = useState("");
+function Home({ account }: Props) {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selected, setSelected] = useState<Movie | null>(null);
+  const [error, setError] = useState("");
 
+  useEffect(() => {
+    let ignore = false;
+    Promise.all([getMovies(account), getCategories(account)])
+      .then(([m, c]) => {
+        if (!ignore) {
+          setMovies(m);
+          setCategories(c);
+        }
+      })
+      .catch((err) => {
+        if (!ignore)
+          setError(err instanceof Error ? err.message : "Could not load");
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [account]);
 
-    useEffect(()=>{
-        let ignore = false ; 
-        Promise.all([getMovies(account) , getCategories(account)])
-        .then(([m ,c])=>{
-            if(!ignore){
-                setMovies(m);
-                setCategories(c);
-            }
-        })
-        .catch((err)=>{
-            if(!ignore) setError(err  instanceof Error ? err.message : "Could not load");
-        });
-        return ()=>{
-            ignore = true ; 
-        };
+  const byCategory = useMemo(() => {
+    const groups = new Map<string, Movie[]>();
+    for (const m of movies) {
+      const group = groups.get(m.category_id);
+      if (group) {
+        group.push(m);
+      } else {
+        groups.set(m.category_id, [m]);
+      }
+    }
+    return groups;
+  }, [movies]);
 
+  if (selected) {
+    return (
+      <Details
+        account={account}
+        movie={selected}
+        onPlay={() => console.log("play", selected.name)}
+        onClose={() => setSelected(null)}
+      />
+    );
+  }
 
-    }, [account]);
+  if (error) return <p>{error}</p>;
+  if (categories.length === 0) return <p>Loading...</p>;
 
-    if (error) return <p>{error}</p>;
-    if(Categories.length === 0) return <p>Loading...</p>;
+  return (
+    <main>
+      {categories.map((c) => {
+        const inCategory = byCategory.get(c.category_id);
+        if (!inCategory) return null;
+        return (
+          <Row
+            key={c.category_id}
+            title={c.category_name}
+            movies={inCategory.slice(0, 20)}
+            onSelect={setSelected}
+          />
+        );
+      })}
+    </main>
+  );
+}
 
-    const first = Categories[0];
-    const infirst = movies.filter((m)=> m.category_id === first.category_id).slice(0,20);
-
-    return(
-        <main>
-            <Row title={first.category_name} movies={infirst} />
-        </main>
-    )
-
-
-
-};
-
-
-export default Home ; 
+export default Home;

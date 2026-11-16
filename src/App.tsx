@@ -2,6 +2,9 @@ import { useState } from "react";
 import Login from "./Login";
 import Home from "./Home";
 import type { Account } from "./api";
+import Header from "./Header"
+
+
 
 // the account is kept in the browser, so a refresh does not sign the user out
 const storageKey = "sahra.account";
@@ -27,10 +30,24 @@ function App() {
     setAccount(acc);
   }
 
+  function signOut() {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // storage blocked: nothing was saved anyway
+    }
+    setAccount(null);
+  }
+
   if (!account) {
     return <Login onLogin={signIn} />;
   }
-  return <Home account={account} />;
+  return (
+    <>
+      <Header  username={account.username} onSignOut={signOut}/>
+      <Home account={account} />
+    </>
+  );
 }
 
 export default App;

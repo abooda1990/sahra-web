@@ -1,5 +1,5 @@
 import { type Movie } from "./api";
-import Poster from "./poster";
+import Poster from "./Poster";
 
 type Props = { title: string; movies: Movie[] ; onSelect : (movie: Movie) => void};
 

@@ -5,24 +5,59 @@ body {
   color: #eee;
 }
 
-.login{
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(17, 17, 17, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.logo{
+  color: #e5a50a;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.header-user{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color : #aaa;
+ 
+}
+.header-user button{
+  padding: 6px 12px ;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: none;
+  color: #eee;
+  cursor: pointer;
+}
+
+.login {
   display: flex;
   flex-direction: column;
   gap: 12px;
   width: 300px;
-  margin: 15vh auto 0 ;
+  margin: 15vh auto 0;
   padding: 32px;
   border-radius: 12px;
   background: #1c1c1c;
 }
-.login input{
+.login input {
   padding: 10px;
   border: 1px solid #333;
   border-radius: 6px;
   background-color: #111;
   color: #eee;
 }
-.login button{
+.login button {
   padding: 10px;
   border: none;
   border-radius: 6px;
@@ -53,8 +88,7 @@ body {
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
-    padding: 8px 0;
-
+  padding: 8px 0;
 }
 
 .poster {
@@ -64,7 +98,7 @@ body {
   object-fit: cover;
   border-radius: 6px;
   background: #222;
-   transition: transform 0.2s;
+  transition: transform 0.2s;
 }
 .poster-button:hover .poster {
   transform: scale(1.08);
@@ -77,7 +111,7 @@ body {
   cursor: pointer;
 }
 
-.poster-fallback{
+.poster-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,7 +120,6 @@ body {
   text-align: center;
   font-size: 0.9rem;
   color: #aaa;
-
 }
 .details {
   position: fixed;
@@ -141,7 +174,6 @@ body {
   opacity: 0.4;
   cursor: default;
 }
-
 
 .player {
   position: fixed;

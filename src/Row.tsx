@@ -1,4 +1,5 @@
 import { type Movie } from "./api";
+import Poster from "./poster";
 
 type Props = { title: string; movies: Movie[] ; onSelect : (movie: Movie) => void};
 
@@ -7,17 +8,13 @@ type Props = { title: string; movies: Movie[] ; onSelect : (movie: Movie) => voi
 function Row({ title, movies , onSelect}: Props) {
   return (
     <section className="row">
-      <h2>{title}</h2>
+      <h2 dir="auto">{title}</h2>
+
 
       <div className="row-posters">
         {movies.map((movie) => (
           <button key={movie.stream_id} className="poster-button" onClick={()=> onSelect(movie)}>
-            <img
-              className="poster"
-              src={movie.stream_icon}
-              alt={movie.name}
-              loading="lazy"
-            />
+           <Poster movie={movie}/>
           </button>
         ))}
       </div>

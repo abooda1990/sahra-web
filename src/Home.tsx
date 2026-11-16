@@ -8,6 +8,7 @@ import {
 } from "./api";
 import Row from "./Row";
 import Details from "./Details";
+import Player from "./Player";
 
 type Props = { account: Account };
 
@@ -15,6 +16,7 @@ function Home({ account }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selected, setSelected] = useState<Movie | null>(null);
+  const [playing , setPlaying]= useState<Movie | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -48,12 +50,18 @@ function Home({ account }: Props) {
     return groups;
   }, [movies]);
 
+  if (playing) {
+    return <Player account={account} movie={playing} onClose={()=>setPlaying(null)}/>
+  }
+
   if (selected) {
     return (
       <Details
         account={account}
         movie={selected}
-        onPlay={() => console.log("play", selected.name)}
+        onPlay={() => setPlaying(selected)}
+
+
         onClose={() => setSelected(null)}
       />
     );

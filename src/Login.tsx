@@ -24,7 +24,7 @@ function Login({ onLogin }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form  className="login" onSubmit={handleSubmit}>
       <input
         placeholder="Username"
         value={username}

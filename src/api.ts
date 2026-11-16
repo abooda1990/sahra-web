@@ -60,10 +60,7 @@ export type MovieInfo = {
   };
 };
 
-export async function getMovieInfo(
-  account: Account,
-  movie: Movie,
-): Promise<MovieInfo> {
+export async function getMovieInfo(account: Account,movie: Movie,): Promise<MovieInfo> {
   const params = new URLSearchParams({
     ...account,
     action: "get_vod_info",
@@ -76,4 +73,16 @@ export async function getMovieInfo(
     throw new Error(`Could not load the movie (${res.status})`);
   }
   return res.json();
+}
+
+
+export function movieUrl(account: Account , movie: Movie): string {
+  const user = encodeURIComponent(account.username);
+  const pass = encodeURIComponent(account.password);
+  if (movie.container_extension === "mp4") {
+    return `/movie/${user}/${pass}/${movie.stream_id}.mp4`;
+  }
+
+  return `/web/movie/${user}/${pass}/${movie.stream_id}.mp4?ext=${movie.container_extension}`
+
 }

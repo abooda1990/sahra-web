@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/player_api.php': 'http://localhost:3000',
       '/web': 'http://localhost:3000',
+      '/movie': 'http://localhost:3000',
     },
   },
 })

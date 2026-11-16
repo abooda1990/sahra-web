@@ -121,9 +121,37 @@ body {
   font-size: 0.9rem;
   color: #aaa;
 }
+
+.row-body {
+  position: relative;
+}
+.row-arrow{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 44px;
+  border: none;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 2.5rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.row-body:hover .row-arrow{
+  opacity: 1;
+}
+.row-arrow.left {
+  left: 0;
+}
+.row-arrow.right {
+  right: 0;
+}
 .details {
   position: fixed;
   inset: 0;
+   z-index: 20;
   overflow-y: auto;
   background-size: cover;
 
@@ -178,6 +206,8 @@ body {
 .player {
   position: fixed;
   inset: 0;
+  
+  z-index: 20;
   background: #000;
   display: flex;
   align-items: center;

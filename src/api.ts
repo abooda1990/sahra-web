@@ -103,3 +103,10 @@ export function movieUrl(account: Account, movie: Movie): string {
 
   return `/web/movie/${user}/${pass}/${movie.stream_id}.mp4?ext=${movie.container_extension}`;
 }
+
+
+// posterUrl asks our server for the movie's TMDB poster (it redirects to the image, or 404)
+export function posterUrl(account: Account, movie: Movie): string {
+  const params = new URLSearchParams(account);
+  return `/web/poster/${movie.stream_id}?${params}`;
+}

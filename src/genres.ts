@@ -28,3 +28,6 @@ const names: Record<number, Record<Lang, string>> = {
 export function genreName(id : number , lang: Lang = "en"): string{
     return names[id]?.[lang] ?? (lang === "ar" ? "أخرى" : "Other" );
 }
+
+// the rows that go at the bottom, in this order: sports, plays, then the movies with no genre
+export const lastGenres = [-1, -2, 0];

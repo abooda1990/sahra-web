@@ -11,7 +11,8 @@ import {
 import Row from "./Row";
 import Details from "./Details";
 import Player from "./Player";
-import { genreName } from "./genres";
+import { genreName, lastGenres } from "./genres";
+
 
 type Props = { account: Account };
 
@@ -58,7 +59,7 @@ function Home({ account }: Props) {
     }
     return groups;
   }, [movies]);
-    // byGenre: one row per genre, the biggest first. A movie with two genres is in both rows;
+  // byGenre: one row per genre, the biggest first. A movie with two genres is in both rows;
   // one with none (or newer than genres.json) is in "Other" (id 0). Empty when there are no genres.
 
   const byGenre = useMemo(() => {
@@ -75,10 +76,14 @@ function Home({ account }: Props) {
         }
       }
     }
-    return [...groups].sort((a, b) => b[1].length - a[1].length);
-  }, [movies, genres]);
+       return [...groups].sort((a, b) => {
+      const lastA = lastGenres.indexOf(a[0]);
+      const lastB = lastGenres.indexOf(b[0]);
+      if (lastA !== lastB) return lastA - lastB;
+      return b[1].length - a[1].length;
+    });
 
- 
+  }, [movies, genres]);
 
   if (playing) {
     return (
@@ -104,11 +109,12 @@ function Home({ account }: Props) {
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
 
-   if (byGenre.length > 0) {
+  if (byGenre.length > 0) {
     return (
       <main>
         {byGenre.map(([id, inGenre]) => (
           <Row
+           account={account}
             key={id}
             title={genreName(id)}
             movies={inGenre.slice(0, 20)}
@@ -126,6 +132,7 @@ function Home({ account }: Props) {
         if (!inCategory) return null;
         return (
           <Row
+           account={account}
             key={c.category_id}
             title={c.category_name}
             movies={inCategory.slice(0, 20)}

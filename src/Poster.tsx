@@ -1,27 +1,24 @@
 import { useState } from "react";
-import type { Movie } from "./api";
+import { posterUrl, type Account, type Movie } from "./api";
 
-type  Props={ movie : Movie}
+type Props = { account: Account; movie: Movie };
 
-function Poster ({movie}: Props){
-    const [failed , setFailed] = useState(false);
-    
-    if(!movie.stream_icon || failed){
-        return (
-            <div className="poster poster-fallback">{movie.name}</div>
-        )
-    }
-    return (
-        <img 
-            className="poster"
-            src= {movie.stream_icon}
-            alt= {movie.name}
-            loading="lazy"
-            onError={()=>setFailed(true)}
-        
-        />
-    )
+// Poster tries the provider's image, then TMDB's (through our server), then shows the name
+function Poster({ account, movie }: Props) {
+  const [stage, setStage] = useState(movie.stream_icon ? 0 : 1);
 
+  if (stage === 2) {
+    return <div className="poster poster-fallback">{movie.name}</div>;
+  }
+  return (
+    <img
+      className="poster"
+      src={stage === 0 ? movie.stream_icon : posterUrl(account, movie)}
+      alt={movie.name}
+      loading="lazy"
+      onError={() => setStage(stage + 1)}
+    />
+  );
 }
 
-export default Poster ; 
+export default Poster;

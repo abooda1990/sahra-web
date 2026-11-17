@@ -17,22 +17,21 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.logo{
+.logo {
   color: #e5a50a;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 2px;
 }
 
-.header-user{
+.header-user {
   display: flex;
   align-items: center;
   gap: 12px;
-  color : #aaa;
- 
+  color: #aaa;
 }
-.header-user button{
-  padding: 6px 12px ;
+.header-user button {
+  padding: 6px 12px;
   border: 1px solid #444;
   border-radius: 6px;
   background: none;
@@ -125,21 +124,21 @@ body {
 .row-body {
   position: relative;
 }
-.row-arrow{
+.row-arrow {
   position: absolute;
   top: 0;
   bottom: 0;
   z-index: 2;
   width: 44px;
   border: none;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   color: #fff;
   font-size: 2.5rem;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
 }
-.row-body:hover .row-arrow{
+.row-body:hover .row-arrow {
   opacity: 1;
 }
 .row-arrow.left {
@@ -151,7 +150,7 @@ body {
 .details {
   position: fixed;
   inset: 0;
-   z-index: 20;
+  z-index: 20;
   overflow-y: auto;
   background-size: cover;
 
@@ -206,7 +205,7 @@ body {
 .player {
   position: fixed;
   inset: 0;
-  
+
   z-index: 20;
   background: #000;
   display: flex;

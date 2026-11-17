@@ -1,31 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   getCategories,
+  getGenres,
   getMovies,
   type Account,
   type Category,
+  type Genres,
   type Movie,
 } from "./api";
 import Row from "./Row";
 import Details from "./Details";
 import Player from "./Player";
+import { genreName } from "./genres";
 
 type Props = { account: Account };
 
 function Home({ account }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [genres, setGenres] = useState<Genres>({});
   const [selected, setSelected] = useState<Movie | null>(null);
-  const [playing , setPlaying]= useState<Movie | null>(null);
+  const [playing, setPlaying] = useState<Movie | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let ignore = false;
-    Promise.all([getMovies(account), getCategories(account)])
-      .then(([m, c]) => {
+    Promise.all([
+      getMovies(account),
+      getCategories(account),
+      getGenres(account),
+    ])
+      .then(([m, c, g]) => {
         if (!ignore) {
           setMovies(m);
           setCategories(c);
+          setGenres(g);
         }
       })
       .catch((err) => {
@@ -49,9 +58,36 @@ function Home({ account }: Props) {
     }
     return groups;
   }, [movies]);
+    // byGenre: one row per genre, the biggest first. A movie with two genres is in both rows;
+  // one with none (or newer than genres.json) is in "Other" (id 0). Empty when there are no genres.
+
+  const byGenre = useMemo(() => {
+    const groups = new Map<number, Movie[]>();
+    if (Object.keys(genres).length === 0) return [];
+    for (const m of movies) {
+      const ids = genres[String(m.stream_id)] ?? [];
+      for (const id of ids.length > 0 ? ids : [0]) {
+        const group = groups.get(id);
+        if (group) {
+          group.push(m);
+        } else {
+          groups.set(id, [m]);
+        }
+      }
+    }
+    return [...groups].sort((a, b) => b[1].length - a[1].length);
+  }, [movies, genres]);
+
+ 
 
   if (playing) {
-    return <Player account={account} movie={playing} onClose={()=>setPlaying(null)}/>
+    return (
+      <Player
+        account={account}
+        movie={playing}
+        onClose={() => setPlaying(null)}
+      />
+    );
   }
 
   if (selected) {
@@ -60,8 +96,6 @@ function Home({ account }: Props) {
         account={account}
         movie={selected}
         onPlay={() => setPlaying(selected)}
-
-
         onClose={() => setSelected(null)}
       />
     );
@@ -69,6 +103,21 @@ function Home({ account }: Props) {
 
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
+
+   if (byGenre.length > 0) {
+    return (
+      <main>
+        {byGenre.map(([id, inGenre]) => (
+          <Row
+            key={id}
+            title={genreName(id)}
+            movies={inGenre.slice(0, 20)}
+            onSelect={setSelected}
+          />
+        ))}
+      </main>
+    );
+  }
 
   return (
     <main>

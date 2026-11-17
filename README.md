@@ -12,11 +12,17 @@ A web video player built with React and TypeScript, for a Go streaming backend.
 
 ## Features
 
+
+
 - [x] Login against the backend
-- [ ] Movie and series lists
-- [ ] Video player
+- [x] Movie rows by genre (Netflix-style), with the provider's categories as a fallback
+- [x] Movie details and video player
+- [ ] Series
 - [ ] Live channels
 - [ ] Arabic and English (RTL)
+
+
+
 
 ## Run it
 

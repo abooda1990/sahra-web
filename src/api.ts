@@ -44,6 +44,22 @@ export function getMovies(account: Account): Promise<Movie[]> {
 export function getCategories(account: Account): Promise<Category[]> {
   return list<Category>(account, "get_vod_categories");
 }
+// Genres maps a movie's stream_id to its TMDB genre ids: {"57641": [35, 18]}
+export type Genres = Record<string, number[]>;
+
+// getGenres gives {} when the server has no genres, so the site falls back to the categories
+export async function getGenres(account: Account): Promise<Genres> {
+  const params = new URLSearchParams(account);
+  try {
+    const res = await fetch(`/web/genres?${params}`);
+    if (!res.ok) {
+      return {};
+    }
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
 
 export type MovieInfo = {
   info: {
@@ -60,7 +76,10 @@ export type MovieInfo = {
   };
 };
 
-export async function getMovieInfo(account: Account,movie: Movie,): Promise<MovieInfo> {
+export async function getMovieInfo(
+  account: Account,
+  movie: Movie,
+): Promise<MovieInfo> {
   const params = new URLSearchParams({
     ...account,
     action: "get_vod_info",
@@ -75,14 +94,12 @@ export async function getMovieInfo(account: Account,movie: Movie,): Promise<Movi
   return res.json();
 }
 
-
-export function movieUrl(account: Account , movie: Movie): string {
+export function movieUrl(account: Account, movie: Movie): string {
   const user = encodeURIComponent(account.username);
   const pass = encodeURIComponent(account.password);
   if (movie.container_extension === "mp4") {
     return `/movie/${user}/${pass}/${movie.stream_id}.mp4`;
   }
 
-  return `/web/movie/${user}/${pass}/${movie.stream_id}.mp4?ext=${movie.container_extension}`
-
+  return `/web/movie/${user}/${pass}/${movie.stream_id}.mp4?ext=${movie.container_extension}`;
 }

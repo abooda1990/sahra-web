@@ -15,6 +15,21 @@ import { genreName, lastGenres } from "./genres";
 import Poster from "./Poster";
 import { loadProgress } from "./progress";
 import Grid from "./Grid";
+import { cleanTitle, language } from "./title";
+
+
+
+// isMatch: a football match is never grouped, two matches can share a name
+function isMatch(m: Movie, genres: Genres): boolean {
+  return genres[String(m.stream_id)]?.includes(-1) ?? false;
+}
+
+
+// rank: the copy to show is the lowest: Arabic subtitles first, then mp4 (plays and seeks in a browser)
+function rank(m: Movie): number {
+  return (language(m.name) === "AR" ? 0 : 2) + (m.container_extension === "mp4" ? 0 : 1);
+}
+
 
 type Props = { account: Account; query: string };
 
@@ -59,6 +74,44 @@ function Home({ account, query }: Props) {
     [movies],
   );
 
+    // copies: each movie's copies (same cleaned title and year), the best first. A copy with no year
+  // takes the year of the others when the title has only one; between equal copies the newest stays first.
+  const copies = useMemo(() => {
+    const years = new Map<string, Set<number>>();
+    const named = newest.map((m) => {
+      const { title, year } = cleanTitle(m.name);
+      const key = title.toLowerCase();
+      if (year > 0) {
+        const known = years.get(key) ?? new Set<number>();
+        known.add(year);
+        years.set(key, known);
+      }
+      return { m, key, year };
+    });
+
+    const groups = new Map<string, Movie[]>();
+    for (const { m, key, year } of named) {
+      const known = years.get(key);
+      const sure = year === 0 && known?.size === 1 ? [...known][0] : year;
+      const group = isMatch(m, genres) ? `match|${m.stream_id}` : `${key}|${sure}`;
+      const list = groups.get(group);
+      if (list) {
+        list.push(m);
+      } else {
+        groups.set(group, [m]);
+      }
+    }
+    for (const list of groups.values()) {
+      list.sort((a, b) => rank(a) - rank(b));
+    }
+    return groups;
+  }, [newest, genres]);
+
+
+  // unique: one movie for each group, its best copy
+  const unique = useMemo(() => [...copies.values()].map((group) => group[0]), [copies]);
+
+
   // movieById finds a movie by its stream_id fast (for the movies in progress)
   const movieById = useMemo(
     () => new Map(movies.map((m) => [m.stream_id, m])),
@@ -67,7 +120,7 @@ function Home({ account, query }: Props) {
 
   const byCategory = useMemo(() => {
     const groups = new Map<string, Movie[]>();
-    for (const m of newest) {
+    for (const m of unique) {
       const group = groups.get(m.category_id);
       if (group) {
         group.push(m);
@@ -76,14 +129,14 @@ function Home({ account, query }: Props) {
       }
     }
     return groups;
-  }, [newest]);
+  }, [unique]);
   // byGenre: one row per genre, the biggest first. A movie with two genres is in both rows;
   // one with none (or newer than genres.json) is in "Other" (id 0). Empty when there are no genres.
 
   const byGenre = useMemo(() => {
     const groups = new Map<number, Movie[]>();
     if (Object.keys(genres).length === 0) return [];
-    for (const m of newest) {
+    for (const m of unique) {
       const ids = genres[String(m.stream_id)] ?? [];
       for (const id of ids.length > 0 ? ids : [0]) {
         const group = groups.get(id);
@@ -100,15 +153,15 @@ function Home({ account, query }: Props) {
       if (lastA !== lastB) return lastA - lastB;
       return b[1].length - a[1].length;
     });
-  }, [newest, genres]);
+  }, [unique, genres]);
 
   const results = useMemo(() => {
     const q = searched.trim().toLocaleLowerCase();
     if (q === "") return [];
-    return newest
+    return unique
       .filter((m) => m.name.toLocaleLowerCase().includes(q))
       .slice(0, 60);
-  }, [newest, searched]);
+  }, [unique, searched]);
 
   if (playing) {
     return (

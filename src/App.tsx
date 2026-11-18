@@ -21,6 +21,8 @@ function savedAccount(): Account | null {
 function App() {
   const [account, setAccount] = useState<Account | null>(savedAccount);
 
+  const [query , setQuery] = useState("");
+
   function signIn(acc: Account) {
     try {
       localStorage.setItem(storageKey, JSON.stringify(acc));
@@ -37,6 +39,8 @@ function App() {
       // storage blocked: nothing was saved anyway
     }
     setAccount(null);
+     setQuery("");
+
   }
 
   if (!account) {
@@ -44,8 +48,13 @@ function App() {
   }
   return (
     <>
-      <Header  username={account.username} onSignOut={signOut}/>
-      <Home account={account} />
+      <Header 
+       query = {query}
+       onSearch = {setQuery}
+       username={account.username} 
+       onSignOut={signOut}
+       />
+      <Home account={account}  query={query}/>
     </>
   );
 }

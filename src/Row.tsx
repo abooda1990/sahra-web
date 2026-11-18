@@ -42,7 +42,7 @@ function Row({ account, title, movies, onSelect }: Props) {
               className="poster-button"
               onClick={() => onSelect(movie)}
             >
-                          <Poster account={account} movie={movie} />
+             <Poster account={account} movie={movie} />
 
             </button>
           ))}

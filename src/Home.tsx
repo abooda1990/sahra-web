@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   getCategories,
   getGenres,
@@ -12,17 +12,19 @@ import Row from "./Row";
 import Details from "./Details";
 import Player from "./Player";
 import { genreName, lastGenres } from "./genres";
+import Poster from "./Poster";
 
+type Props = { account: Account , query : string};
 
-type Props = { account: Account };
-
-function Home({ account }: Props) {
+function Home({ account , query}: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [genres, setGenres] = useState<Genres>({});
   const [selected, setSelected] = useState<Movie | null>(null);
   const [playing, setPlaying] = useState<Movie | null>(null);
   const [error, setError] = useState("");
+
+  const searched = useDeferredValue(query);
 
   useEffect(() => {
     let ignore = false;
@@ -47,9 +49,14 @@ function Home({ account }: Props) {
     };
   }, [account]);
 
+  const newest = useMemo(
+    () => [...movies].sort((a, b) => Number(b.added) - Number(a.added)),
+    [movies],
+  );
+
   const byCategory = useMemo(() => {
     const groups = new Map<string, Movie[]>();
-    for (const m of movies) {
+    for (const m of newest) {
       const group = groups.get(m.category_id);
       if (group) {
         group.push(m);
@@ -58,14 +65,14 @@ function Home({ account }: Props) {
       }
     }
     return groups;
-  }, [movies]);
+  }, [newest]);
   // byGenre: one row per genre, the biggest first. A movie with two genres is in both rows;
   // one with none (or newer than genres.json) is in "Other" (id 0). Empty when there are no genres.
 
   const byGenre = useMemo(() => {
     const groups = new Map<number, Movie[]>();
     if (Object.keys(genres).length === 0) return [];
-    for (const m of movies) {
+    for (const m of newest) {
       const ids = genres[String(m.stream_id)] ?? [];
       for (const id of ids.length > 0 ? ids : [0]) {
         const group = groups.get(id);
@@ -76,14 +83,21 @@ function Home({ account }: Props) {
         }
       }
     }
-       return [...groups].sort((a, b) => {
+    return [...groups].sort((a, b) => {
       const lastA = lastGenres.indexOf(a[0]);
       const lastB = lastGenres.indexOf(b[0]);
       if (lastA !== lastB) return lastA - lastB;
       return b[1].length - a[1].length;
     });
+  }, [newest, genres]);
 
-  }, [movies, genres]);
+  const results = useMemo(() => {
+    const q = searched.trim().toLocaleLowerCase();
+    if (q === "") return [];
+    return newest
+      .filter((m) => m.name.toLocaleLowerCase().includes(q))
+      .slice(0,  60);
+  }, [newest, searched]);
 
   if (playing) {
     return (
@@ -109,39 +123,55 @@ function Home({ account }: Props) {
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
 
-  if (byGenre.length > 0) {
-    return (
-      <main>
-        {byGenre.map(([id, inGenre]) => (
+    const rows =
+    byGenre.length > 0
+      ? byGenre.map(([id, inGenre]) => (
           <Row
-           account={account}
+            account={account}
             key={id}
             title={genreName(id)}
             movies={inGenre.slice(0, 20)}
             onSelect={setSelected}
           />
-        ))}
-      </main>
-    );
-  }
+        ))
+      : categories.map((c) => {
+          const inCategory = byCategory.get(c.category_id);
+          if (!inCategory) return null;
+          return (
+            <Row
+              account={account}
+              key={c.category_id}
+              title={c.category_name}
+              movies={inCategory.slice(0, 20)}
+              onSelect={setSelected}
+            />
+          );
+        });
 
   return (
     <main>
-      {categories.map((c) => {
-        const inCategory = byCategory.get(c.category_id);
-        if (!inCategory) return null;
-        return (
-          <Row
-           account={account}
-            key={c.category_id}
-            title={c.category_name}
-            movies={inCategory.slice(0, 20)}
-            onSelect={setSelected}
-          />
-        );
-      })}
+    
+      {query.trim() === "" ? (
+        rows
+      ) : (
+        <div className="results">
+          {results.map((m) => (
+            <button
+              key={m.stream_id}
+              className="poster-button"
+              onClick={() => setSelected(m)}
+            >
+              <Poster account={account} movie={m} />
+            </button>
+          ))}
+          {results.length === 0 && <p>No movies found</p>}
+        </div>
+      )}
     </main>
   );
 }
+
+  
+
 
 export default Home;

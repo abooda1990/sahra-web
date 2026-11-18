@@ -21,6 +21,7 @@ export type Movie = {
   container_extension: string;
   category_id: string;
   rating: number;
+  added : string ;
 };
 
 export type Category = {
@@ -44,6 +45,7 @@ export function getMovies(account: Account): Promise<Movie[]> {
 export function getCategories(account: Account): Promise<Category[]> {
   return list<Category>(account, "get_vod_categories");
 }
+
 // Genres maps a movie's stream_id to its TMDB genre ids: {"57641": [35, 18]}
 export type Genres = Record<string, number[]>;
 

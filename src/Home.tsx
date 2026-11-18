@@ -13,6 +13,8 @@ import Details from "./Details";
 import Player from "./Player";
 import { genreName, lastGenres } from "./genres";
 import Poster from "./Poster";
+import { loadProgress } from "./progress";
+
 
 type Props = { account: Account , query : string};
 
@@ -51,6 +53,12 @@ function Home({ account , query}: Props) {
 
   const newest = useMemo(
     () => [...movies].sort((a, b) => Number(b.added) - Number(a.added)),
+    [movies],
+  );
+
+  // movieById finds a movie by its stream_id fast (for the movies in progress)
+  const movieById = useMemo(
+    ()=> new Map(movies.map((m)=> [m.stream_id , m])),
     [movies],
   );
 
@@ -123,6 +131,11 @@ function Home({ account , query}: Props) {
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
 
+  const watching = Object.entries(loadProgress())
+  .sort((a,b) => b[1].at - a[1].at)
+  .map(([id]) => movieById.get(Number(id)))
+  .filter((m) => m !== undefined);
+
     const rows =
     byGenre.length > 0
       ? byGenre.map(([id, inGenre]) => (
@@ -152,7 +165,19 @@ function Home({ account , query}: Props) {
     <main>
     
       {query.trim() === "" ? (
-        rows
+        <>
+        {watching.length > 0 && (
+            <Row
+              account={account}
+              title="Continue watching"
+              movies={watching}
+              onSelect={setPlaying}
+            />
+          )}
+          {rows}
+        </>
+
+        
       ) : (
         <div className="results">
           {results.map((m) => (

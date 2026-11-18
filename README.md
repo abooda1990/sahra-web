@@ -19,6 +19,7 @@ A web video player built with React and TypeScript, for a Go streaming backend.
 - [x] Movie details and video player
 - [x] Posters from TMDB when the provider has none (found once by the server, then cached)
 - [x] Search by name, newest movies first
+- [x] Movie details and video player, continue watching from where you stopped
 - [ ] Series
 - [ ] Live channels
 - [ ] Arabic and English (RTL)

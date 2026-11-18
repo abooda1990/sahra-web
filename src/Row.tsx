@@ -2,6 +2,8 @@ import { type Movie } from "./api";
 import Poster from "./Poster";
 import { useRef } from "react";
 import { type Account } from "./api";
+import { loadProgress } from "./progress";
+
 
 type Props = {
   account: Account;
@@ -16,6 +18,9 @@ type Props = {
 function Row({ account, title, movies, onSelect }: Props) {
 
   const postersRef = useRef<HTMLDivElement>(null);
+
+    const progress = loadProgress();
+
 
   function scroll(direction: 1 | -1) {
     const posters = postersRef.current;
@@ -43,7 +48,18 @@ function Row({ account, title, movies, onSelect }: Props) {
               onClick={() => onSelect(movie)}
             >
              <Poster account={account} movie={movie} />
+              {progress[movie.stream_id] && (
 
+                <div className="progress">
+                  <div 
+                    style={ { width : `${(progress[movie.stream_id].time / progress[movie.stream_id].duration * 100)}%`,
+                  }}
+                  
+                  />
+
+                </div>
+              )
+              }
             </button>
           ))}
         </div>

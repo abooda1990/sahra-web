@@ -100,9 +100,9 @@ body {
   object-fit: cover;
   border-radius: 6px;
   background: #222;
-  transition: transform 0.2s;
+
 }
-.poster-button:hover .poster {
+.poster-button:hover  {
   transform: scale(1.08);
 }
 .poster-button {
@@ -111,6 +111,9 @@ body {
   border: none;
   background: none;
   cursor: pointer;
+    position: relative;
+  transition: transform 0.2s;
+
   
 }
 
@@ -123,6 +126,21 @@ body {
   text-align: center;
   font-size: 0.9rem;
   color: #aaa;
+}
+
+.progress {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+.progress div {
+  height: 100%;
+  background: #e50914;
 }
 
 .row-body {

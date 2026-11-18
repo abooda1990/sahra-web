@@ -14,19 +14,22 @@ import Player from "./Player";
 import { genreName, lastGenres } from "./genres";
 import Poster from "./Poster";
 import { loadProgress } from "./progress";
+import Grid from "./Grid";
 
+type Props = { account: Account; query: string };
 
-type Props = { account: Account , query : string};
-
-function Home({ account , query}: Props) {
+function Home({ account, query }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [genres, setGenres] = useState<Genres>({});
   const [selected, setSelected] = useState<Movie | null>(null);
   const [playing, setPlaying] = useState<Movie | null>(null);
   const [error, setError] = useState("");
-
   const searched = useDeferredValue(query);
+  const [expanded, setExpanded] = useState<{
+    title: string;
+    movies: Movie[];
+  } | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -58,7 +61,7 @@ function Home({ account , query}: Props) {
 
   // movieById finds a movie by its stream_id fast (for the movies in progress)
   const movieById = useMemo(
-    ()=> new Map(movies.map((m)=> [m.stream_id , m])),
+    () => new Map(movies.map((m) => [m.stream_id, m])),
     [movies],
   );
 
@@ -104,7 +107,7 @@ function Home({ account , query}: Props) {
     if (q === "") return [];
     return newest
       .filter((m) => m.name.toLocaleLowerCase().includes(q))
-      .slice(0,  60);
+      .slice(0, 60);
   }, [newest, searched]);
 
   if (playing) {
@@ -131,12 +134,31 @@ function Home({ account , query}: Props) {
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
 
-  const watching = Object.entries(loadProgress())
-  .sort((a,b) => b[1].at - a[1].at)
-  .map(([id]) => movieById.get(Number(id)))
-  .filter((m) => m !== undefined);
+    if (expanded && query.trim() === "") {
+    return (
+      <Grid
+        account={account}
+        title={expanded.title}
+        movies={expanded.movies}
+        onSelect={setSelected}
+        onClose={() => setExpanded(null)}
+      />
+    );
+  }
 
-    const rows =
+
+  const watching = Object.entries(loadProgress())
+    .sort((a, b) => b[1].at - a[1].at)
+    .map(([id]) => movieById.get(Number(id)))
+    .filter((m) => m !== undefined);
+
+  // seeAll opens one row as a full grid, from the top of the page
+  function seeAll(title: string, list: Movie[]) {
+    setExpanded({ title, movies: list });
+    window.scrollTo(0, 0);
+  }
+
+  const rows =
     byGenre.length > 0
       ? byGenre.map(([id, inGenre]) => (
           <Row
@@ -145,6 +167,7 @@ function Home({ account , query}: Props) {
             title={genreName(id)}
             movies={inGenre.slice(0, 20)}
             onSelect={setSelected}
+            onSeeAll={() => seeAll(genreName(id), inGenre)}
           />
         ))
       : categories.map((c) => {
@@ -157,16 +180,16 @@ function Home({ account , query}: Props) {
               title={c.category_name}
               movies={inCategory.slice(0, 20)}
               onSelect={setSelected}
+              onSeeAll={() => seeAll(c.category_name, inCategory)}
             />
           );
         });
 
   return (
     <main>
-    
       {query.trim() === "" ? (
         <>
-        {watching.length > 0 && (
+          {watching.length > 0 && (
             <Row
               account={account}
               title="Continue watching"
@@ -176,8 +199,6 @@ function Home({ account , query}: Props) {
           )}
           {rows}
         </>
-
-        
       ) : (
         <div className="results">
           {results.map((m) => (
@@ -195,8 +216,5 @@ function Home({ account , query}: Props) {
     </main>
   );
 }
-
-  
-
 
 export default Home;

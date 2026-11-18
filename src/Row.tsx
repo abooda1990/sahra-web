@@ -10,12 +10,15 @@ type Props = {
   title: string;
   movies: Movie[];
   onSelect: (movie: Movie) => void;
+ onSeeAll?: () => void;
+
 };
 
 
 //Row is one category: its name, then its posters side by side
 
-function Row({ account, title, movies, onSelect }: Props) {
+function Row({ account, title, movies, onSelect, onSeeAll }: Props) {
+
 
   const postersRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +33,15 @@ function Row({ account, title, movies, onSelect }: Props) {
 
   return (
     <section className="row">
-      <h2 dir="auto">{title}</h2>
+           <div className="row-head">
+        <h2 dir="auto">{title}</h2>
+        {onSeeAll && (
+          <button className="see-all" onClick={onSeeAll}>
+            See all ›
+          </button>
+        )}
+      </div>
+
       <div className="row-body">
         <button
           className="row-arrow left"

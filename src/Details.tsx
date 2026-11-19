@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { getMovieInfo, type Account, type Movie, type MovieInfo } from "./api";
+import { language } from "./title";
 
 type Props = {
   account: Account;
   movie: Movie;
+  copies: Movie[];
+  onPick: (copy: Movie) => void;
   onPlay: () => void;
   onClose: () => void;
 };
 
-function Details({ account, movie, onPlay, onClose }: Props) {
+function Details({ account, movie, copies, onPick, onPlay, onClose }: Props) {
   const [info, setInfo] = useState<MovieInfo["info"] | null>(null);
   const [error, setError] = useState("");
 
@@ -35,7 +38,7 @@ function Details({ account, movie, onPlay, onClose }: Props) {
     .join(".");
 
   return (
-    <div className="details" style={{backgroundImage: `url(${backdrop})` }}>
+    <div className="details" style={{ backgroundImage: `url(${backdrop})` }}>
       <button className="details-back" onClick={onClose}>
         ← Back
       </button>
@@ -56,6 +59,22 @@ function Details({ account, movie, onPlay, onClose }: Props) {
             <p>
               <b>Director:</b> {info.director}
             </p>
+          )}
+          {copies.length > 1 && (
+            <div className="copies">
+              {copies.map((c) => (
+                <button
+                  key={c.stream_id}
+                  className={
+                    c.stream_id === movie.stream_id ? "copy current" : "copy"
+                  }
+                  onClick={() => onPick(c)}
+                >
+                  {language(c.name) || "Other"} ·{" "}
+                  {c.container_extension.toUpperCase()}
+                </button>
+              ))}
+            </div>
           )}
           <button
             className="play"

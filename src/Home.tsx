@@ -17,19 +17,18 @@ import { loadProgress } from "./progress";
 import Grid from "./Grid";
 import { cleanTitle, language } from "./title";
 
-
-
 // isMatch: a football match is never grouped, two matches can share a name
 function isMatch(m: Movie, genres: Genres): boolean {
   return genres[String(m.stream_id)]?.includes(-1) ?? false;
 }
 
-
 // rank: the copy to show is the lowest: Arabic subtitles first, then mp4 (plays and seeks in a browser)
 function rank(m: Movie): number {
-  return (language(m.name) === "AR" ? 0 : 2) + (m.container_extension === "mp4" ? 0 : 1);
+  return (
+    (language(m.name) === "AR" ? 0 : 2) +
+    (m.container_extension === "mp4" ? 0 : 1)
+  );
 }
-
 
 type Props = { account: Account; query: string };
 
@@ -74,7 +73,7 @@ function Home({ account, query }: Props) {
     [movies],
   );
 
-    // copies: each movie's copies (same cleaned title and year), the best first. A copy with no year
+  // copies: each movie's copies (same cleaned title and year), the best first. A copy with no year
   // takes the year of the others when the title has only one; between equal copies the newest stays first.
   const copies = useMemo(() => {
     const years = new Map<string, Set<number>>();
@@ -93,7 +92,9 @@ function Home({ account, query }: Props) {
     for (const { m, key, year } of named) {
       const known = years.get(key);
       const sure = year === 0 && known?.size === 1 ? [...known][0] : year;
-      const group = isMatch(m, genres) ? `match|${m.stream_id}` : `${key}|${sure}`;
+      const group = isMatch(m, genres)
+        ? `match|${m.stream_id}`
+        : `${key}|${sure}`;
       const list = groups.get(group);
       if (list) {
         list.push(m);
@@ -107,10 +108,20 @@ function Home({ account, query }: Props) {
     return groups;
   }, [newest, genres]);
 
-
   // unique: one movie for each group, its best copy
-  const unique = useMemo(() => [...copies.values()].map((group) => group[0]), [copies]);
+  const unique = useMemo(
+    () => [...copies.values()].map((group) => group[0]),
+    [copies],
+  );
 
+  //copiesOf : a movie's stream_id -> all the copies of that movie (for the buttons Details)
+  const copiesOf = useMemo(() => {
+    const map = new Map<number, Movie[]>();
+    for (const group of copies.values()) {
+      for (const m of group) map.set(m.stream_id, group);
+    }
+    return map;
+  }, [copies]);
 
   // movieById finds a movie by its stream_id fast (for the movies in progress)
   const movieById = useMemo(
@@ -176,8 +187,11 @@ function Home({ account, query }: Props) {
   if (selected) {
     return (
       <Details
+        key={selected.stream_id}
         account={account}
         movie={selected}
+        copies={copiesOf.get(selected.stream_id) ?? [selected]}
+        onPick={setSelected}
         onPlay={() => setPlaying(selected)}
         onClose={() => setSelected(null)}
       />
@@ -187,7 +201,7 @@ function Home({ account, query }: Props) {
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
 
-    if (expanded && query.trim() === "") {
+  if (expanded && query.trim() === "") {
     return (
       <Grid
         account={account}
@@ -198,7 +212,6 @@ function Home({ account, query }: Props) {
       />
     );
   }
-
 
   const watching = Object.entries(loadProgress())
     .sort((a, b) => b[1].at - a[1].at)

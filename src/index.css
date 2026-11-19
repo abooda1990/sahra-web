@@ -318,3 +318,23 @@ body {
   color: #fff;
   cursor: pointer;
 }
+
+.copies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+
+}
+.copy {
+  padding: 6px 12px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ddd;
+  cursor: pointer;
+}
+.copy.current {
+  border-color: #e5a50a;
+  color: #e5a50a;
+}

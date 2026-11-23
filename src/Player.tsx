@@ -22,11 +22,21 @@ function Player({ account, movie, onClose }: Props) {
   const [now, setNow] = useState(offset);
   const [duration, setDuration] = useState(0);
   const lastSave = useRef(0);
-  const box = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+   const box = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+
+  // jump starts a new stream at `to`. The same offset means the same link, so load() asks again.
+  function jump(to: number) {
+    dragging.current = false;
+    if (to === offset) video.current?.load();
+    else setOffset(to);
+  }
+
+ 
 
   function mute() {
     const v = video.current;
@@ -68,7 +78,8 @@ function Player({ account, movie, onClose }: Props) {
 
   function save(video: HTMLVideoElement, at: boolean) {
     const real = offset + video.currentTime;
-    setNow(real);
+    if (!dragging.current) setNow(real);
+
     if (!at && Date.now() - lastSave.current < 5000) return;
     lastSave.current = Date.now();
     saveProgress(movie.stream_id, real, direct ? video.duration : duration);
@@ -103,8 +114,6 @@ function Player({ account, movie, onClose }: Props) {
       />
       {!direct && (
         <div className="seek">
-         
-
           <button onClick={toggle}>{paused ? "▶" : "❚❚"}</button>
           <span>{clock(now)}</span>
           {duration > 0 && (
@@ -114,14 +123,15 @@ function Player({ account, movie, onClose }: Props) {
                 min={0}
                 max={duration}
                 value={now}
-                onChange={(e) => setNow(Number(e.target.value))}
-                onPointerUp={() => setOffset(Math.floor(now))}
-                onKeyUp={() => setOffset(Math.floor(now))}
+                 onChange={(e) => setNow(Number(e.target.value))}
+                onPointerDown={() => (dragging.current = true)}
+                onPointerUp={() => jump(Math.floor(now))}
+                onKeyUp={() => jump(Math.floor(now))}
               />
               <span>{clock(duration)}</span>
             </>
           )}
-              <button onClick={mute}>{muted || volume === 0 ? "🔇" : "🔊"}</button>
+          <button onClick={mute}>{muted || volume === 0 ? "🔇" : "🔊"}</button>
           <input
             className="volume"
             type="range"

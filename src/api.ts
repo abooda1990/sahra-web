@@ -72,7 +72,7 @@ export type MovieInfo = {
     duration?: string;
     year?: string;
     rating?: number | string;
-
+    duration_secs?: number;
     backdrop_path?: string[];
     video?: { codec_name: string };
   };
@@ -96,14 +96,15 @@ export async function getMovieInfo(
   return res.json();
 }
 
-export function movieUrl(account: Account, movie: Movie): string {
+export function movieUrl(account: Account, movie: Movie , start = 0): string {
   const user = encodeURIComponent(account.username);
   const pass = encodeURIComponent(account.password);
   if (movie.container_extension === "mp4") {
     return `/movie/${user}/${pass}/${movie.stream_id}.mp4`;
   }
+  const t = start > 0 ? `&t=${start}` : "" ;
 
-  return `/web/movie/${user}/${pass}/${movie.stream_id}.mp4?ext=${movie.container_extension}`;
+  return `/web/movie/${user}/${pass}/${movie.stream_id}.mp4?ext=${movie.container_extension}${t}`;
 }
 
 

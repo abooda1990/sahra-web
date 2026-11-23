@@ -1,37 +1,139 @@
-import { useRef } from "react";
-import { movieUrl, type Account, type Movie } from "./api";
+import { useEffect, useRef, useState } from "react";
+import { getMovieInfo, movieUrl, type Account, type Movie } from "./api";
 import { loadProgress, saveProgress } from "./progress";
 
 type Props = { account: Account; movie: Movie; onClose: () => void };
 
+// clock turns seconds into "1:05:09"
+function clock(sec: number): string {
+  const s = Math.floor(sec);
+  const h = Math.floor(s / 3600);
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  return `${h}:${m}:${String(s % 60).padStart(2, "0")}`;
+}
+
 // Player plays a movie from where the user stopped, and remembers where they are (every 5 seconds)
 function Player({ account, movie, onClose }: Props) {
+  const direct = movie.container_extension == "mp4";
+  const saved = loadProgress()[movie.stream_id];
+  const [offset, setOffset] = useState(
+    direct ? 0 : Math.floor(saved?.time ?? 0),
+  );
+  const [now, setNow] = useState(offset);
+  const [duration, setDuration] = useState(0);
   const lastSave = useRef(0);
+  const box = useRef<HTMLDivElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
 
-  function resume(video: HTMLVideoElement) {
-    const saved = loadProgress()[movie.stream_id];
-    if (saved) video.currentTime = saved.time;
+  function mute() {
+    const v = video.current;
+    if (v) v.muted = !v.muted;
   }
 
-  function save(video: HTMLVideoElement, now: boolean) {
-    if (!now && Date.now() - lastSave.current < 5000) return;
+  function changeVolume(value: number) {
+    const v = video.current;
+    if (!v) return;
+    v.volume = value;
+    v.muted = value === 0;
+  }
+
+  function toggle() {
+    const v = video.current;
+    if (!v) return;
+    if (v.paused) v.play();
+    else v.pause();
+  }
+
+  // fullscreen on the whole player (not only the video) so our bar stays visible
+  function fullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else box.current?.requestFullscreen();
+  }
+
+  useEffect(() => {
+    if (direct) return;
+    let ignore = false;
+    getMovieInfo(account, movie)
+      .then((data) => {
+        if (!ignore) setDuration(Number(data.info.duration_secs) || 0);
+      })
+      .catch(() => {});
+    return () => {
+      ignore = true;
+    };
+  }, [account, movie, direct]);
+
+  function save(video: HTMLVideoElement, at: boolean) {
+    const real = offset + video.currentTime;
+    setNow(real);
+    if (!at && Date.now() - lastSave.current < 5000) return;
     lastSave.current = Date.now();
-    saveProgress(movie.stream_id, video.currentTime, video.duration);
+    saveProgress(movie.stream_id, real, direct ? video.duration : duration);
+  }
+
+  function resume(video: HTMLVideoElement) {
+    if (direct && saved) video.currentTime = saved.time;
   }
 
   return (
-    <div className="player">
+    <div className="player" ref={box}>
       <button className="player-back" onClick={onClose}>
         ← Back
       </button>
       <video
-        src={movieUrl(account, movie)}
-        controls
+        ref={video}
+        src={movieUrl(account, movie, offset)}
+        controls={direct}
         autoPlay
+        onClick={direct ? undefined : toggle}
         onLoadedMetadata={(e) => resume(e.currentTarget)}
         onTimeUpdate={(e) => save(e.currentTarget, false)}
-        onPause={(e) => save(e.currentTarget, true)}
+        onPlay={() => setPaused(false)}
+        onPause={(e) => {
+          setPaused(true);
+          save(e.currentTarget, true);
+        }}
+        onVolumeChange={(e) => {
+          setVolume(e.currentTarget.volume);
+          setMuted(e.currentTarget.muted);
+        }}
       />
+      {!direct && (
+        <div className="seek">
+         
+
+          <button onClick={toggle}>{paused ? "▶" : "❚❚"}</button>
+          <span>{clock(now)}</span>
+          {duration > 0 && (
+            <>
+              <input
+                type="range"
+                min={0}
+                max={duration}
+                value={now}
+                onChange={(e) => setNow(Number(e.target.value))}
+                onPointerUp={() => setOffset(Math.floor(now))}
+                onKeyUp={() => setOffset(Math.floor(now))}
+              />
+              <span>{clock(duration)}</span>
+            </>
+          )}
+              <button onClick={mute}>{muted || volume === 0 ? "🔇" : "🔊"}</button>
+          <input
+            className="volume"
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={muted ? 0 : volume}
+            onChange={(e) => changeVolume(Number(e.target.value))}
+          />
+          <button onClick={fullscreen}>⛶</button>
+        </div>
+      )}
     </div>
   );
 }

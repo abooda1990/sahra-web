@@ -23,7 +23,7 @@ function Player({ account, movie, onClose }: Props) {
   const [duration, setDuration] = useState(0);
   const lastSave = useRef(0);
   const dragging = useRef(false);
-   const box = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -35,8 +35,6 @@ function Player({ account, movie, onClose }: Props) {
     if (to === offset) video.current?.load();
     else setOffset(to);
   }
-
- 
 
   function mute() {
     const v = video.current;
@@ -123,7 +121,7 @@ function Player({ account, movie, onClose }: Props) {
                 min={0}
                 max={duration}
                 value={now}
-                 onChange={(e) => setNow(Number(e.target.value))}
+                onChange={(e) => setNow(Number(e.target.value))}
                 onPointerDown={() => (dragging.current = true)}
                 onPointerUp={() => jump(Math.floor(now))}
                 onKeyUp={() => jump(Math.floor(now))}

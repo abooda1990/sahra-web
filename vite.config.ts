@@ -10,6 +10,7 @@ export default defineConfig({
       '/player_api.php': 'http://localhost:3000',
       '/web': 'http://localhost:3000',
       '/movie': 'http://localhost:3000',
+       '/series': 'http://localhost:3000',
     },
   },
 })

@@ -161,7 +161,7 @@ function vodUrl(
   const pass = encodeURIComponent(account.password);
 
   if (ext === "mp4") {
-    return `/web/${kind}/${user}/${pass}/${id}.mp4`;
+    return `/${kind}/${user}/${pass}/${id}.mp4`;
   }
   const t = start > 0 ? `&t=${start}` : "";
 

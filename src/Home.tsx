@@ -10,7 +10,7 @@ import {
 } from "./api";
 import Row from "./Row";
 import Details from "./Details";
-import Player from "./Player";
+import MoviePlayer from "./MoviePlayer";
 import { genreName, lastGenres } from "./genres";
 import MovieCard from "./MovieCard";
 import { loadProgress } from "./progress";
@@ -176,7 +176,7 @@ function Home({ account, query }: Props) {
 
   if (playing) {
     return (
-      <Player
+      <MoviePlayer
         account={account}
         movie={playing}
         onClose={() => setPlaying(null)}
@@ -202,7 +202,9 @@ function Home({ account, query }: Props) {
   if (categories.length === 0) return <p>Loading...</p>;
 
   const progress = loadProgress();
-  const watching = Object.entries(progress)
+  
+   const watching = Object.entries(progress)
+    .filter(([, p]) => p.series === undefined)
     .sort((a, b) => b[1].at - a[1].at)
     .map(([id]) => movieById.get(Number(id)))
     .filter((m) => m !== undefined);

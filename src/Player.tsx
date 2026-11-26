@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import { getMovieInfo, movieUrl, type Account, type Movie } from "./api";
+import { useRef, useState } from "react";
 import { loadProgress, saveProgress } from "./progress";
 
-type Props = { account: Account; movie: Movie; onClose: () => void };
+type Props = {
+  url: (start: number) => string;
+  direct: boolean;
+  duration: number;
+  progressKey: string;
+  series?: number;
+  onEnded?: () => void;
+  onClose: () => void;
+};
 
 // clock turns seconds into "1:05:09"
 function clock(sec: number): string {
@@ -12,15 +19,15 @@ function clock(sec: number): string {
   return `${h}:${m}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// Player plays a movie from where the user stopped, and remembers where they are (every 5 seconds)
-function Player({ account, movie, onClose }: Props) {
-  const direct = movie.container_extension == "mp4";
-  const saved = loadProgress()[movie.stream_id];
-  const [offset, setOffset] = useState(
-    direct ? 0 : Math.floor(saved?.time ?? 0),
-  );
+// Player plays a movie or an episode from where the user stopped, and remembers where they are
+// (every 5 seconds). It does not know which: url gives the link from a second, direct says the
+// browser can seek in it (an mp4), duration is the length for our own bar (0 when not known).
+// Anything else comes from ffmpeg with no length and no seeking, so a jump asks url for a new
+// stream from that second.
+function Player({ url, direct, duration, progressKey, series, onEnded, onClose }: Props) {
+  const saved = loadProgress()[progressKey];
+  const [offset, setOffset] = useState(direct ? 0 : Math.floor(saved?.time ?? 0));
   const [now, setNow] = useState(offset);
-  const [duration, setDuration] = useState(0);
   const lastSave = useRef(0);
   const dragging = useRef(false);
   const box = useRef<HTMLDivElement>(null);
@@ -61,26 +68,13 @@ function Player({ account, movie, onClose }: Props) {
     else box.current?.requestFullscreen();
   }
 
-  useEffect(() => {
-    if (direct) return;
-    let ignore = false;
-    getMovieInfo(account, movie)
-      .then((data) => {
-        if (!ignore) setDuration(Number(data.info.duration_secs) || 0);
-      })
-      .catch(() => {});
-    return () => {
-      ignore = true;
-    };
-  }, [account, movie, direct]);
-
   function save(video: HTMLVideoElement, at: boolean) {
     const real = offset + video.currentTime;
     if (!dragging.current) setNow(real);
 
     if (!at && Date.now() - lastSave.current < 5000) return;
     lastSave.current = Date.now();
-    saveProgress(movie.stream_id, real, direct ? video.duration : duration);
+    saveProgress(progressKey, real, direct ? video.duration : duration, series);
   }
 
   function resume(video: HTMLVideoElement) {
@@ -94,7 +88,7 @@ function Player({ account, movie, onClose }: Props) {
       </button>
       <video
         ref={video}
-        src={movieUrl(account, movie, offset)}
+        src={url(offset)}
         controls={direct}
         autoPlay
         onClick={direct ? undefined : toggle}
@@ -105,6 +99,7 @@ function Player({ account, movie, onClose }: Props) {
           setPaused(true);
           save(e.currentTarget, true);
         }}
+        onEnded={onEnded}
         onVolumeChange={(e) => {
           setVolume(e.currentTarget.volume);
           setMuted(e.currentTarget.muted);

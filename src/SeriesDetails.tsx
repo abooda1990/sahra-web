@@ -1,7 +1,13 @@
 import { getSeriesInfo, type Account, type Episode, type Series } from "./api";
 import { useState, useEffect } from "react";
+import { episodeKey, loadProgress } from "./progress";
 
-type Props = { account: Account; series: Series; onClose: () => void };
+type Props = {
+  account: Account;
+  series: Series;
+  onPlay: (episode: Episode, all: Episode[]) => void;
+  onClose: () => void;
+};
 
 //minutes gives an episode's length as "43"min, or "" when the provider does not know it
 function minutes(episode: Episode): string {
@@ -9,7 +15,18 @@ function minutes(episode: Episode): string {
   return secs ? `${Math.round(secs / 60)} min` : "";
 }
 
-function SeriesDetails({ account, series, onClose }: Props) {
+// lastWatched is the episode the user watched most recently (undefined when none was started)
+function lastWatched(list: Episode[]): Episode | undefined {
+  const progress = loadProgress();
+  let last: Episode | undefined;
+  for (const e of list) {
+    const p = progress[episodeKey(e.id)];
+    if (p && (!last || p.at > progress[episodeKey(last.id)].at)) last = e;
+  }
+  return last;
+}
+
+function SeriesDetails({ account, series, onPlay, onClose }: Props) {
   const [episodes, setEpisodes] = useState<Record<string, Episode[]> | null>(
     null,
   );
@@ -21,8 +38,11 @@ function SeriesDetails({ account, series, onClose }: Props) {
     getSeriesInfo(account, series)
       .then((data) => {
         if (!ignore) {
+          const last = lastWatched(Object.values(data.episodes).flat());
           setEpisodes(data.episodes);
-          setSeason(Object.keys(data.episodes)[0] ?? "");
+          setSeason(
+            last ? String(last.season) : (Object.keys(data.episodes)[0] ?? ""),
+          );
         }
       })
 
@@ -38,6 +58,17 @@ function SeriesDetails({ account, series, onClose }: Props) {
   // the keys are season numbers, and JavaScript keeps number-like keys in order: "1", "2", ..., "10"
   const seasons = episodes ? Object.keys(episodes) : [];
   const list = episodes?.[season] ?? [];
+  // playable: every episode of every season in order, without the ones a browser can't play,
+  // so the next one after the last of a season is the first of the next season
+  const playable = episodes
+    ? Object.values(episodes)
+        .flat()
+        .filter((e) => e.info?.video?.codec_name !== "hevc")
+    : [];
+  const progress = loadProgress();
+  const resume = lastWatched(playable);
+  const first = resume ?? playable[0];
+
   const rating = Number(series.rating);
   const meta = [
     series.releaseDate?.slice(0, 4),
@@ -47,8 +78,11 @@ function SeriesDetails({ account, series, onClose }: Props) {
     .filter(Boolean)
     .join(" · ");
 
-      return (
-    <div className="details" style={{ backgroundImage: `url(${series.cover})` }}>
+  return (
+    <div
+      className="details"
+      style={{ backgroundImage: `url(${series.cover})` }}
+    >
       <button className="details-back" onClick={onClose}>
         ← Back
       </button>
@@ -78,12 +112,32 @@ function SeriesDetails({ account, series, onClose }: Props) {
               ))}
             </div>
           )}
+          {first && (
+            <button className="play" onClick={() => onPlay(first, playable)}>
+              ▶ {resume ? "Resume" : "Play"} S{first.season} · E
+              {first.episode_num}
+            </button>
+          )}
+
           <ol className="episodes">
             {list.map((e) => (
               <li key={e.id}>
-                <button className="episode" disabled={e.info?.video?.codec_name === "hevc"}>
+                <button
+                  className="episode"
+                  disabled={e.info?.video?.codec_name === "hevc"}
+                  onClick={() => onPlay(e, playable)}
+                >
                   <span>Episode {e.episode_num}</span>
                   <span>{minutes(e)}</span>
+                  {progress[episodeKey(e.id)] && (
+                    <div className="progress">
+                      <div
+                        style={{
+                          width: `${(progress[episodeKey(e.id)].time / progress[episodeKey(e.id)].duration) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  )}
                 </button>
               </li>
             ))}
@@ -92,7 +146,5 @@ function SeriesDetails({ account, series, onClose }: Props) {
       </div>
     </div>
   );
-
-
 }
 export default SeriesDetails;

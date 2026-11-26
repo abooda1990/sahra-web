@@ -1,5 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { getSeries, getSeriesCategories, type Account, type Category, type Series } from "./api";
+import { episodeUrl, getSeries, getSeriesCategories, type Account, type Category, type Episode, type Series } from "./api";
+import Player from "./Player";
+import { episodeKey ,loadProgress} from "./progress";
+
 import Grid from "./Grid";
 import Row from "./Row";
 import SeriesCard from "./SeriesCard";
@@ -58,6 +61,8 @@ function SeriesHome({ account, query }: Props) {
   const [error, setError] = useState("");
   const [view, setView] = useState<View>("genre");
   const [selected,setSelected]= useState<Series | null>(null);
+    const [playing, setPlaying] = useState<{ episode: Episode; all: Episode[] } | null>(null);
+
   const [expanded, setExpanded] = useState<{ title: string; series: Series[] } | null>(null);
   const searched = useDeferredValue(query);
 
@@ -82,6 +87,9 @@ function SeriesHome({ account, query }: Props) {
     () => [...series].sort((a, b) => Number(b.last_modified) - Number(a.last_modified)),
     [series],
   );
+
+    const seriesById = useMemo(() => new Map(series.map((s) => [s.series_id, s])), [series]);
+
   
 
 
@@ -113,6 +121,35 @@ function SeriesHome({ account, query }: Props) {
   function cards(list: Series[]) {
     return list.map((s) => <SeriesCard key={s.series_id} series={s} onSelect={setSelected} />);
   }
+    // watching: the series with an episode in progress, the one watched last first
+  const watching = [
+    ...new Set(
+      Object.values(loadProgress())
+        .filter((p) => p.series !== undefined)
+        .sort((a, b) => b.at - a.at)
+        .map((p) => p.series),
+    ),
+  ]
+    .map((id) => seriesById.get(id as number))
+    .filter((s) => s !== undefined);
+
+
+    if (playing) {
+    const { episode, all } = playing;
+    const next = all[all.indexOf(episode) + 1];
+    return (
+      <Player
+        key={episode.id}
+        url={(start) => episodeUrl(account, episode, start)}
+        direct={episode.container_extension === "mp4"}
+        duration={episode.info?.duration_secs ?? 0}
+        progressKey={episodeKey(episode.id)}
+        series={selected?.series_id}
+        onEnded={() => setPlaying(next ? { episode: next, all } : null)}
+        onClose={() => setPlaying(null)}
+      />
+    );
+  }
 
   if (selected) {
   return (
@@ -120,10 +157,14 @@ function SeriesHome({ account, query }: Props) {
       key={selected.series_id}
       account={account}
       series={selected}
+              onPlay={(episode, all) => setPlaying({ episode, all })}
+
       onClose={() => setSelected(null)}
     />
   );
 }
+
+
 
 
   if (error) return <p>{error}</p>;
@@ -153,6 +194,8 @@ function SeriesHome({ account, query }: Props) {
 
   return (
     <main>
+       {watching.length > 0 && <Row title="Continue watching">{cards(watching)}</Row>}
+
       <div className="views">
         {views.map((v) => (
           <button

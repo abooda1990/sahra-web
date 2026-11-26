@@ -61,7 +61,7 @@ function SeriesHome({ account, query }: Props) {
   const [error, setError] = useState("");
   const [view, setView] = useState<View>("genre");
   const [selected,setSelected]= useState<Series | null>(null);
-    const [playing, setPlaying] = useState<{ episode: Episode; all: Episode[] } | null>(null);
+  const [playing, setPlaying] = useState<{ episode: Episode; all: Episode[] } | null>(null);
 
   const [expanded, setExpanded] = useState<{ title: string; series: Series[] } | null>(null);
   const searched = useDeferredValue(query);
@@ -157,7 +157,7 @@ function SeriesHome({ account, query }: Props) {
       key={selected.series_id}
       account={account}
       series={selected}
-              onPlay={(episode, all) => setPlaying({ episode, all })}
+      onPlay={(episode, all) => setPlaying({ episode, all })}
 
       onClose={() => setSelected(null)}
     />

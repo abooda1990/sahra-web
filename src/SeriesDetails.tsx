@@ -1,6 +1,6 @@
 import { getSeriesInfo, type Account, type Episode, type Series } from "./api";
 import { useState, useEffect } from "react";
-import { episodeKey, loadProgress } from "./progress";
+import { episodeKey, finished, loadProgress } from "./progress";
 
 type Props = {
   account: Account;
@@ -26,6 +26,23 @@ function lastWatched(list: Episode[]): Episode | undefined {
   return last;
 }
 
+// playableOf is every episode of every season in order, without the ones a browser can't play,
+// so the next one after the last of a season is the first of the next season
+function playableOf(episodes: Record<string, Episode[]>): Episode[] {
+  return Object.values(episodes)
+    .flat()
+    .filter((e) => e.info?.video?.codec_name !== "hevc");
+}
+
+// upNext is where the user goes on: the episode they stopped in, or the one after it when they
+// finished it. undefined when nothing was started, or the very last episode was finished.
+function upNext(playable: Episode[]): Episode | undefined {
+  const last = lastWatched(playable);
+  if (!last) return undefined;
+  const p = loadProgress()[episodeKey(last.id)];
+  return finished(p) ? playable[playable.indexOf(last) + 1] : last;
+}
+
 function SeriesDetails({ account, series, onPlay, onClose }: Props) {
   const [episodes, setEpisodes] = useState<Record<string, Episode[]> | null>(
     null,
@@ -38,10 +55,12 @@ function SeriesDetails({ account, series, onPlay, onClose }: Props) {
     getSeriesInfo(account, series)
       .then((data) => {
         if (!ignore) {
-          const last = lastWatched(Object.values(data.episodes).flat());
+          const resume = upNext(playableOf(data.episodes));
           setEpisodes(data.episodes);
           setSeason(
-            last ? String(last.season) : (Object.keys(data.episodes)[0] ?? ""),
+            resume
+              ? String(resume.season)
+              : (Object.keys(data.episodes)[0] ?? ""),
           );
         }
       })
@@ -60,13 +79,10 @@ function SeriesDetails({ account, series, onPlay, onClose }: Props) {
   const list = episodes?.[season] ?? [];
   // playable: every episode of every season in order, without the ones a browser can't play,
   // so the next one after the last of a season is the first of the next season
-  const playable = episodes
-    ? Object.values(episodes)
-        .flat()
-        .filter((e) => e.info?.video?.codec_name !== "hevc")
-    : [];
+
+  const playable = episodes ? playableOf(episodes) : [];
   const progress = loadProgress();
-  const resume = lastWatched(playable);
+  const resume = upNext(playable);
   const first = resume ?? playable[0];
 
   const rating = Number(series.rating);
@@ -114,8 +130,13 @@ function SeriesDetails({ account, series, onPlay, onClose }: Props) {
           )}
           {first && (
             <button className="play" onClick={() => onPlay(first, playable)}>
-              ▶ {resume ? "Resume" : "Play"} S{first.season} · E
-              {first.episode_num}
+              ▶{" "}
+              {!resume
+                ? "Play"
+                : progress[episodeKey(resume.id)]
+                  ? "Resume"
+                  : "Next"}{" "}
+              S{first.season} · E{first.episode_num}
             </button>
           )}
 

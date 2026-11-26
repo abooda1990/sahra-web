@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { loadProgress, saveProgress } from "./progress";
+import { finished, loadProgress, saveProgress } from "./progress";
+
 
 type Props = {
   url: (start: number) => string;
@@ -25,7 +26,10 @@ function clock(sec: number): string {
 // Anything else comes from ffmpeg with no length and no seeking, so a jump asks url for a new
 // stream from that second.
 function Player({ url, direct, duration, progressKey, series, onEnded, onClose }: Props) {
-  const saved = loadProgress()[progressKey];
+    const stored = loadProgress()[progressKey];
+  // a finished episode starts again from the beginning
+  const saved = stored && !finished(stored) ? stored : undefined;
+
   const [offset, setOffset] = useState(direct ? 0 : Math.floor(saved?.time ?? 0));
   const [now, setNow] = useState(offset);
   const lastSave = useRef(0);

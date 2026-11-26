@@ -2,7 +2,8 @@ import { useState } from "react";
 import Login from "./Login";
 import Home from "./Home";
 import type { Account } from "./api";
-import Header from "./Header"
+import Header , {type Section} from "./Header"
+import SeriesHome from "./SeriesHome";
 
 
 
@@ -22,6 +23,8 @@ function App() {
   const [account, setAccount] = useState<Account | null>(savedAccount);
 
   const [query , setQuery] = useState("");
+    const [section, setSection] = useState<Section>("movies");
+
 
   function signIn(acc: Account) {
     try {
@@ -46,17 +49,25 @@ function App() {
   if (!account) {
     return <Login onLogin={signIn} />;
   }
-  return (
+    return (
     <>
-      <Header 
-       query = {query}
-       onSearch = {setQuery}
-       username={account.username} 
-       onSignOut={signOut}
-       />
-      <Home account={account}  query={query}/>
+      <Header
+        username={account.username}
+        section={section}
+        onSection={setSection}
+        query={query}
+        onSearch={setQuery}
+        onSignOut={signOut}
+      />
+      <div hidden={section !== "movies"}>
+        <Home account={account} query={query} />
+      </div>
+      <div hidden={section !== "series"}>
+        <SeriesHome account={account} query={query} />
+      </div>
     </>
   );
+
 }
 
 export default App;

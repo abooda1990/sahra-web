@@ -369,3 +369,53 @@ body {
 .seek input.volume {
   flex: 0 0 80px;
 }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+.tab {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: #aaa;
+  font-size: 15px;
+  cursor: pointer;
+}
+.tab.current {
+  color: #fff;
+  font-weight: 600;
+}
+.views {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.episodes {
+  display: grid;
+  gap: 6px;
+  max-height: 50vh;
+  margin: 16px 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.episode {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+.episode:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.episode:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

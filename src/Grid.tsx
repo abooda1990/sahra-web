@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import type { Account, Movie } from "./api";
-import Poster from "./Poster";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-type Props = {
-  account: Account;
+type Props<T> = {
   title: string;
-  movies: Movie[];
-  onSelect: (movie: Movie) => void;
+  items: T[];
+  render: (visible: T[]) => ReactNode;
+
   onClose: () => void;
 };
 
 const page = 40;
 
-function Grid({ account, title, movies, onSelect, onClose }: Props) {
+// Grid shows a whole list, 40 at a time: more come when the user scrolls near the end.
+// It does not know what the items are: render draws the ones to show.
+
+function Grid<T>({ title, items, render, onClose }: Props<T>) {
   const [shown, setShown] = useState(page);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -31,26 +32,15 @@ function Grid({ account, title, movies, onSelect, onClose }: Props) {
 
   return (
     <main>
-     <div className="grid-head">
+      <div className="grid-head">
         <button className="grid-back" onClick={onClose}>
           ← Back
         </button>
         <h2 dir="auto">{title}</h2>
-        <span className="grid-count">{movies.length} movies</span>
+        <span className="grid-count">{items.length} movies</span>
       </div>
-        <div className="results">
-          {movies.slice(0, shown).map((m) => (
-            <button
-              key={m.stream_id}
-              className="poster-button"
-              onClick={() => onSelect(m)}
-            >
-              <Poster account={account} movie={m} />
-            </button>
-          ))}
-        </div>
-        {shown < movies.length && <div ref={endRef} />}
-      
+      <div className="results">{render(items.slice(0, shown))}</div>
+      {shown < items.length && <div ref={endRef} />}
     </main>
   );
 }

@@ -12,7 +12,7 @@ import Row from "./Row";
 import Details from "./Details";
 import Player from "./Player";
 import { genreName, lastGenres } from "./genres";
-import Poster from "./Poster";
+import MovieCard from "./MovieCard";
 import { loadProgress } from "./progress";
 import Grid from "./Grid";
 import { cleanTitle, language } from "./title";
@@ -201,22 +201,35 @@ function Home({ account, query }: Props) {
   if (error) return <p>{error}</p>;
   if (categories.length === 0) return <p>Loading...</p>;
 
+  const progress = loadProgress();
+  const watching = Object.entries(progress)
+    .sort((a, b) => b[1].at - a[1].at)
+    .map(([id]) => movieById.get(Number(id)))
+    .filter((m) => m !== undefined);
+
+  // cards turns movies into poster buttons, each with its watched bar
+  function cards(list: Movie[], onSelect: (movie: Movie) => void) {
+    return list.map((m) => (
+      <MovieCard
+        key={m.stream_id}
+        account={account}
+        movie={m}
+        progress={progress[m.stream_id]}
+        onSelect={onSelect}
+      />
+    ));
+  }
+
   if (expanded && query.trim() === "") {
     return (
       <Grid
-        account={account}
+        items={expanded.movies}
         title={expanded.title}
-        movies={expanded.movies}
-        onSelect={setSelected}
+        render={(visible) => cards(visible, setSelected)}
         onClose={() => setExpanded(null)}
       />
     );
   }
-
-  const watching = Object.entries(loadProgress())
-    .sort((a, b) => b[1].at - a[1].at)
-    .map(([id]) => movieById.get(Number(id)))
-    .filter((m) => m !== undefined);
 
   // seeAll opens one row as a full grid, from the top of the page
   function seeAll(title: string, list: Movie[]) {
@@ -228,26 +241,24 @@ function Home({ account, query }: Props) {
     byGenre.length > 0
       ? byGenre.map(([id, inGenre]) => (
           <Row
-            account={account}
             key={id}
             title={genreName(id)}
-            movies={inGenre.slice(0, 20)}
-            onSelect={setSelected}
             onSeeAll={() => seeAll(genreName(id), inGenre)}
-          />
+          >
+            {cards(inGenre.slice(0, 20), setSelected)}
+          </Row>
         ))
       : categories.map((c) => {
           const inCategory = byCategory.get(c.category_id);
           if (!inCategory) return null;
           return (
             <Row
-              account={account}
               key={c.category_id}
               title={c.category_name}
-              movies={inCategory.slice(0, 20)}
-              onSelect={setSelected}
               onSeeAll={() => seeAll(c.category_name, inCategory)}
-            />
+            >
+              {cards(inCategory.slice(0, 20), setSelected)}
+            </Row>
           );
         });
 
@@ -256,26 +267,14 @@ function Home({ account, query }: Props) {
       {query.trim() === "" ? (
         <>
           {watching.length > 0 && (
-            <Row
-              account={account}
-              title="Continue watching"
-              movies={watching}
-              onSelect={setPlaying}
-            />
+            <Row title="Continue watching">{cards(watching, setPlaying)}</Row>
           )}
+
           {rows}
         </>
       ) : (
         <div className="results">
-          {results.map((m) => (
-            <button
-              key={m.stream_id}
-              className="poster-button"
-              onClick={() => setSelected(m)}
-            >
-              <Poster account={account} movie={m} />
-            </button>
-          ))}
+          {cards(results, setSelected)}
           {results.length === 0 && <p>No movies found</p>}
         </div>
       )}

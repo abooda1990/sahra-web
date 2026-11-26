@@ -1,20 +1,22 @@
 import { useState } from "react";
-import { posterUrl, type Account, type Movie } from "./api";
 
-type Props = { account: Account; movie: Movie };
 
-// Poster tries the provider's image, then TMDB's (through our server), then shows the name
-function Poster({ account, movie }: Props) {
-  const [stage, setStage] = useState(movie.stream_icon ? 0 : 1);
+type Props = {name : string; sources : string[]};
 
-  if (stage === 2) {
-    return <div className="poster poster-fallback">{movie.name}</div>;
+// Poster tries each image in turn (an empty one is skipped) and shows the name when none loads
+
+function Poster({name,  sources }: Props) {
+  const [stage, setStage] = useState(0);
+  const src = sources.filter(Boolean)[stage];
+
+  if (!src) {
+    return <div className="poster poster-fallback">{name}</div>;
   }
   return (
     <img
       className="poster"
-      src={stage === 0 ? movie.stream_icon : posterUrl(account, movie)}
-      alt={movie.name}
+      src={src}
+      alt={name}
       loading="lazy"
       onError={() => setStage(stage + 1)}
     />

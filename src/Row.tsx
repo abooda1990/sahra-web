@@ -1,23 +1,15 @@
-import { type Movie } from "./api";
-import Poster from "./Poster";
-import { useRef } from "react";
-import { type Account } from "./api";
-import { loadProgress } from "./progress";
+import { useRef, type ReactNode } from "react";
 
 type Props = {
-  account: Account;
   title: string;
-  movies: Movie[];
-  onSelect: (movie: Movie) => void;
+  children: ReactNode;
   onSeeAll?: () => void;
 };
 
 //Row is one category: its name, then its posters side by side
 
-function Row({ account, title, movies, onSelect, onSeeAll }: Props) {
+function Row({ title, onSeeAll, children }: Props) {
   const postersRef = useRef<HTMLDivElement>(null);
-
-  const progress = loadProgress();
 
   function scroll(direction: 1 | -1) {
     const posters = postersRef.current;
@@ -45,24 +37,7 @@ function Row({ account, title, movies, onSelect, onSeeAll }: Props) {
           ‹
         </button>
         <div className="row-posters" ref={postersRef}>
-          {movies.map((movie) => (
-            <button
-              key={movie.stream_id}
-              className="poster-button"
-              onClick={() => onSelect(movie)}
-            >
-              <Poster account={account} movie={movie} />
-              {progress[movie.stream_id] && (
-                <div className="progress">
-                  <div
-                    style={{
-                      width: `${(progress[movie.stream_id].time / progress[movie.stream_id].duration) * 100}%`,
-                    }}
-                  />
-                </div>
-              )}
-            </button>
-          ))}
+          {children}
         </div>
         <button
           className="row-arrow right"

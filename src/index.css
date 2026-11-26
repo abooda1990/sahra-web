@@ -385,6 +385,7 @@ body {
 }
 .details-body .poster {
   width: 200px;
+  align-self: flex-start;
 }
 .details-meta {
   color: var(--text-muted);
